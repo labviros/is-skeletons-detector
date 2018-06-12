@@ -1,0 +1,9 @@
+{
+  "broker_uri": "amqp://localhost:5672",
+  "zipkin_host": "localhost",
+  "zipkin_port": 9411,
+  "models_folder": "/pose",
+  "model": "MOBILENET_THIN",
+  "resize": "_656x368",
+  "resize_out_ratio": 4.0
+}
