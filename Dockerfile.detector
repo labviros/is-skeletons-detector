@@ -21,5 +21,6 @@ RUN cd /tmp                                                          \
  && pip install --user .
 
 COPY stream.py rpc.py skeletons_pb2.py skeletons.py skeletons_utils.py options_pb2.py options.json /skeletons/
+ADD models/ /models/
 WORKDIR /skeletons
 CMD [ "/bin/bash" ]
