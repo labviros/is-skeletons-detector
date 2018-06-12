@@ -1,5 +1,3 @@
 FROM p35-alpine-opencv331
 RUN pip3 install is-wire is-msgs
-ADD skeletons_pb2.py /
-ADD skeletons_utils.py /
-ADD render.py /
+ADD skeletons_pb2.py skeletons_utils.py options_pb2.py options.json render.py /

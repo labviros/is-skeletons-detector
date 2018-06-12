@@ -2,24 +2,26 @@ syntax = "proto3";
 
 message Options {
   string broker_uri = 1;
-	
-	string zipkin_host = 2;
-	uint32 zipkin_port = 3;
+
+  string zipkin_host = 2;
+  uint32 zipkin_port = 3;
 
   string models_folder = 4;
 
-	enum Model {
-		CMU = 0;
-		MOBILENET_THIN = 1;
-	}
+  enum Model {
+    CMU = 0;
+    MOBILENET_THIN = 1;
+  }
   Model model = 5;
 
-	enum Resize { 
-		_432x368 = 0;
-		_656x368 = 1;
-		_1312x736 = 2;
-	}
+  enum Resize { 
+    _432x368 = 0;
+    _656x368 = 1;
+    _1312x736 = 2;
+  }
   Resize resize = 6;
 
   double resize_out_ratio = 7;
+
+  uint32 render_topic = 8;
 }

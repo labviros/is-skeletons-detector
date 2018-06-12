@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='options.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\roptions.proto\"\x93\x02\n\x07Options\x12\x12\n\nbroker_uri\x18\x01 \x01(\t\x12\x13\n\x0bzipkin_host\x18\x02 \x01(\t\x12\x13\n\x0bzipkin_port\x18\x03 \x01(\r\x12\x15\n\rmodels_folder\x18\x04 \x01(\t\x12\x1d\n\x05model\x18\x05 \x01(\x0e\x32\x0e.Options.Model\x12\x1f\n\x06resize\x18\x06 \x01(\x0e\x32\x0f.Options.Resize\x12\x18\n\x10resize_out_ratio\x18\x07 \x01(\x01\"$\n\x05Model\x12\x07\n\x03\x43MU\x10\x00\x12\x12\n\x0eMOBILENET_THIN\x10\x01\"3\n\x06Resize\x12\x0c\n\x08_432x368\x10\x00\x12\x0c\n\x08_656x368\x10\x01\x12\r\n\t_1312x736\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\roptions.proto\"\xa9\x02\n\x07Options\x12\x12\n\nbroker_uri\x18\x01 \x01(\t\x12\x13\n\x0bzipkin_host\x18\x02 \x01(\t\x12\x13\n\x0bzipkin_port\x18\x03 \x01(\r\x12\x15\n\rmodels_folder\x18\x04 \x01(\t\x12\x1d\n\x05model\x18\x05 \x01(\x0e\x32\x0e.Options.Model\x12\x1f\n\x06resize\x18\x06 \x01(\x0e\x32\x0f.Options.Resize\x12\x18\n\x10resize_out_ratio\x18\x07 \x01(\x01\x12\x14\n\x0crender_topic\x18\x08 \x01(\r\"$\n\x05Model\x12\x07\n\x03\x43MU\x10\x00\x12\x12\n\x0eMOBILENET_THIN\x10\x01\"3\n\x06Resize\x12\x0c\n\x08_432x368\x10\x00\x12\x0c\n\x08_656x368\x10\x01\x12\r\n\t_1312x736\x10\x02\x62\x06proto3')
 )
 
 
@@ -41,8 +41,8 @@ _OPTIONS_MODEL = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=204,
-  serialized_end=240,
+  serialized_start=226,
+  serialized_end=262,
 )
 _sym_db.RegisterEnumDescriptor(_OPTIONS_MODEL)
 
@@ -67,8 +67,8 @@ _OPTIONS_RESIZE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=242,
-  serialized_end=293,
+  serialized_start=264,
+  serialized_end=315,
 )
 _sym_db.RegisterEnumDescriptor(_OPTIONS_RESIZE)
 
@@ -129,6 +129,13 @@ _OPTIONS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='render_topic', full_name='Options.render_topic', index=7,
+      number=8, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -144,7 +151,7 @@ _OPTIONS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=18,
-  serialized_end=293,
+  serialized_end=315,
 )
 
 _OPTIONS.fields_by_name['model'].enum_type = _OPTIONS_MODEL

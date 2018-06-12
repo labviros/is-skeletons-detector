@@ -2,40 +2,28 @@ import re
 import sys
 import cv2
 from threading import Timer
-from skeletons_utils import draw_skeletons, get_pb_image
+from skeletons_utils import draw_skeletons, get_pb_image, load_options
 from skeletons_pb2 import Skeletons
 from is_msgs.image_pb2 import Image
 from is_wire.core import Channel, Subscription, Message, Logger, ZipkinTracer
 from is_wire.rpc import LogInterceptor
 
+op = load_options()
 log = Logger()
-re_uri = re.compile(r'amqp:\/\/[\w0-9\.]+[:][0-9]+$')
-re_id = re.compile(r'[\w]+$')
 
 images = {}
 timers = {}
 
-broker_uri = 'amqp://localhost:5672'
-topic_id = 0
-if len(sys.argv) != 3 and len(sys.argv) != 1:
-    log.critical('Invalid arguments. Try: python render.py <BROKER_URI> <TOPIC_ID>')
-if len(sys.argv) > 1:
-    broker_uri = sys.argv[1]
-    if not re_uri.match(broker_uri):
-        log.critical('Invalid broker uri \'{}\'. Use the pattern: amqp://<HOSTNAME>:<PORT>', broker_uri)
-    topic_id = sys.argv[2]
-    if not re_id.match(topic_id):
-        log.critical('Invalid topic id \'{}\'. It must contains just [a-zA-Z0-9_] characters.', topic_id)
-
-c = Channel(broker_uri)
+c = Channel(op.broker_uri)
 sb = Subscription(c)
-tracer = ZipkinTracer(service_name='Skeletons.{}'.format(topic_id))
+tracer = ZipkinTracer(host_name=op.zipkin_host, port=op.zipkin_port, service_name='Skeletons')
+
 log_int = LogInterceptor()
 
 @tracer.interceptor('Render')
 def on_skeletons(msg, context):
     skeletons = msg.unpack(Skeletons)
-    log_context = {'service_name': 'Skeletons.{}.Render'.format(topic_id)} 
+    log_context = {'service_name': 'Skeletons.{}.Render'.format(op.render_topic)}
     log_context = log_int.before_call(log_context)
 
     metadata = msg.metadata()
@@ -47,7 +35,7 @@ def on_skeletons(msg, context):
                 rendered_image = draw_skeletons(images[trace_id], skeletons)
                 rendered_msg = Message()
                 rendered_msg.pack(get_pb_image(rendered_image))          \
-                    .set_topic('Skeletons.{}.Rendered'.format(topic_id)) \
+                    .set_topic('Skeletons.{}.Rendered'.format(op.render_topic)) \
                     .add_metadata(context)
                 log_context['rpc-status'] = {'code': 'OK'}
             except Exception as ex:
@@ -83,6 +71,6 @@ def on_image(msg, context):
         timers[trace_id] = Timer(60.0, on_timeout, [trace_id])
         timers[trace_id].start()
 
-sb.subscribe('Skeletons.{}.Detections'.format(topic_id), on_skeletons)
-sb.subscribe('CameraGateway.{}.Frame'.format(topic_id), on_image)
+sb.subscribe('Skeletons.{}.Detections'.format(op.render_topic), on_skeletons)
+sb.subscribe('CameraGateway.{}.Frame'.format(op.render_topic), on_image)
 c.listen()
