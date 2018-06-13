@@ -21,4 +21,6 @@ if [ ! -f "models/graph/cmu/graph_opt.pb" ] || [ ! -f "models/graph/mobilenet_th
     cd tf-pose-estimation
     cp --parents models/graph/cmu/graph_opt.pb ${PROJECT_DIR}
     cp --parents models/graph/mobilenet_thin/graph_opt.pb ${PROJECT_DIR}
+    cd $PROJECT_DIR
+    rm -rf tf-pose-estimation
 fi

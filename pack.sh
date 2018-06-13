@@ -22,6 +22,7 @@ function build_image {
     fi
 }
 
+bash get_models.sh
 build_image detector
 build_image render
 build_image mjpeg_server
