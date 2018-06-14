@@ -4,7 +4,10 @@
   "zipkin_port": 9411,
   "models_folder": "/pose",
   "model": "MOBILENET_THIN",
-  "resize": "_656x368",
+  "resize": {
+    "width": 432,
+    "height": 368
+  },
   "resize_out_ratio": 4.0,
   "render_topic": 0
 }

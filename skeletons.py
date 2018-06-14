@@ -13,7 +13,7 @@ class SkeletonsDetector:
         if not isinstance(options, Options):
             raise Exception('Invalid parameter on \'SkeletonsDetector\' constructor: not a Options type')
         self.__op = options
-        model = Options.Resize.Name(self.__op.resize).strip('_')
+        model = '{}x{}'.format(self.__op.resize.width, self.__op.resize.height)
         w, h = model_wh(model)
         self.__resize_to_default = (w > 0 and h > 0)
         model_name = Options.Model.Name(self.__op.model).lower()
@@ -63,5 +63,6 @@ class SkeletonsDetector:
                 part.x = bp.x * im_width
                 part.y = bp.y * im_height
                 part.type = self.__to_sks_part[part_id]
+                part.score = bp.score
         sks.model = SkeletonModel.Value('COCO')
         return sks
