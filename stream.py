@@ -4,8 +4,8 @@ from is_wire.rpc import LogInterceptor
 from is_msgs.image_pb2 import Image
 from skeletons import SkeletonsDetector
 from skeletons_utils import load_options, get_np_image, get_pb_image, draw_skeletons
-
-from time import time
+from queue import Queue
+from threading import Thread
 
 op = load_options()
 sd = SkeletonsDetector(op)
@@ -18,6 +18,28 @@ tracer = ZipkinTracer(host_name=op.zipkin_host, port=op.zipkin_port, service_nam
 log_int = LogInterceptor()
 re_topic = re.compile(r'CameraGateway.(\w+).Frame')
 
+def render(q):
+    cr = Channel(op.broker_uri)
+    while True:
+        img, skeletons, context, topic = q.get()
+        span1 = tracer.start_span('render', context=context)
+        img_rendered = draw_skeletons(img, skeletons)
+        tracer.end_span(span1)
+
+        span2 = tracer.start_span('encode_rendered', context=context)
+        img_rendered_pb = get_pb_image(img_rendered)
+        tracer.end_span(span2)
+
+        topic_rendered = re_topic.sub(r'Skeletons.\1.Rendered', topic)
+        msg = Message()
+        msg.pack(img_rendered_pb).set_topic(topic_rendered)
+        cr.publish(msg)
+
+render_queue = Queue(maxsize=10)
+render_thread = Thread(target=render, args=(render_queue,))
+render_thread.daemon = True
+render_thread.start()
+
 @tracer.interceptor('Detect')
 def on_image(msg, context):
     log_context = {'service_name': 'Skeletons.Detect'}
@@ -25,30 +47,21 @@ def on_image(msg, context):
     
     im = msg.unpack(Image)
     msg_reply = None
-    msg_rendered = None
     if im:
         try:
-            t0 = time()
+            span1 = tracer.start_span('decode_image', context=context)
             im_np = get_np_image(im)
-            t1 = time()
+            tracer.end_span(span1)
+            
+            span2 = tracer.start_span('inference', context=context)
             skeletons = sd.detect(im_np)
-            t2 = time()
+            tracer.end_span(span2)
+            
             msg_reply = Message()
             topic = re_topic.sub(r'Skeletons.\1.Detections', msg.topic())
             msg_reply.pack(skeletons).set_topic(topic).add_metadata(context)
-            t3 = time()
-            im_rendered = draw_skeletons(im_np, skeletons)
-            t4 = time()
-            msg_rendered = Message()
-            topic_rendered = re_topic.sub(r'Skeletons.\1.Rendered', msg.topic())
-            msg_rendered.pack(get_pb_image(im_rendered)).set_topic(topic_rendered)
-            t5 = time()
-            d1 = 1000.0*(t1 - t0)
-            d2 = 1000.0*(t2 - t1)
-            d3 = 1000.0*(t3 - t2)
-            d4 = 1000.0*(t4 - t3)
-            d5 = 1000.0*(t5 - t4)
-            log.info('Decode: {:.2f}ms | Detect: {:.2f}ms | PackSk: {:.2f}ms | Render: {:.2f}ms | PackIm: {:.2f}ms', d1, d2, d3, d4, d5)
+            
+            render_queue.put((im_np, skeletons, context, msg.topic()))
 
             log_context['rpc-status'] = {'code': 'OK'}
         except Exception as ex:
@@ -62,8 +75,7 @@ def on_image(msg, context):
     
     if msg_reply:
         c.publish(msg_reply)
-    if msg_rendered:
-        c.publish(msg_rendered)
+
 
 sb.subscribe('CameraGateway.*.Frame', on_image)
 c.listen()
