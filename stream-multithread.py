@@ -4,6 +4,8 @@ from is_wire.rpc import LogInterceptor
 from is_msgs.image_pb2 import Image
 from skeletons import SkeletonsDetector
 from skeletons_utils import load_options, get_np_image, get_pb_image, draw_skeletons
+from queue import Queue
+from threading import Thread
 
 op = load_options()
 sd = SkeletonsDetector(op)
@@ -34,6 +36,11 @@ def render(q):
         cr.publish(msg)
         q.task_done()
 
+render_queue = Queue(maxsize=10)
+render_thread = Thread(target=render, args=(render_queue,))
+render_thread.daemon = True
+render_thread.start()
+
 @tracer.interceptor('Detect')
 def on_image(msg, context):
     log_context = {'service_name': 'Skeletons.Detect'}
@@ -54,20 +61,8 @@ def on_image(msg, context):
             msg_reply = Message()
             topic = re_topic.sub(r'Skeletons.\1.Detections', msg.topic())
             msg_reply.pack(skeletons).set_topic(topic).add_metadata(context)
-            c.publish(msg_reply)
-
-            span3 = tracer.start_span('render', context=context)
-            img_rendered = draw_skeletons(im_np, skeletons)
-            tracer.end_span(span3)
-
-            span4 = tracer.start_span('encode_rendered', context=context)
-            img_rendered_pb = get_pb_image(img_rendered)
-            tracer.end_span(span4)
-
-            topic_rendered = re_topic.sub(r'Skeletons.\1.Rendered', msg.topic())
-            msg_rendered = Message()
-            msg_rendered.pack(img_rendered_pb).set_topic(topic_rendered)
-            c.publish(msg_rendered)
+            
+            render_queue.put((im_np, skeletons, context, msg.topic()))
 
             log_context['rpc-status'] = {'code': 'OK'}
         except Exception as ex:
@@ -78,6 +73,9 @@ def on_image(msg, context):
         log_context['rpc-status'] = {'code': 'FAILED_PRECONDITION', 'why': why}
 
     log_context = log_int.after_call(log_context)
+    
+    if msg_reply:
+        c.publish(msg_reply)
 
 
 sb.subscribe('CameraGateway.*.Frame', on_image)
