@@ -43,32 +43,25 @@ def on_image(msg, context):
     msg_reply = None
     if im:
         try:
-            span1 = tracer.start_span('decode_image', context=context)
+            # convert image to numpy
             im_np = get_np_image(im)
-            tracer.end_span(span1)
-            
-            span2 = tracer.start_span('inference', context=context)
+            # detect skeletons
             skeletons = sd.detect(im_np)
-            tracer.end_span(span2)
-            
+            # create Skeletons message and publish
             msg_reply = Message()
             topic = re_topic.sub(r'Skeletons.\1.Detections', msg.topic())
             msg_reply.pack(skeletons).set_topic(topic).add_metadata(context)
             c.publish(msg_reply)
-
-            span3 = tracer.start_span('render', context=context)
+            # render skeletons
             img_rendered = draw_skeletons(im_np, skeletons)
-            tracer.end_span(span3)
-
-            span4 = tracer.start_span('encode_rendered', context=context)
+            # converte image to protobuf Image
             img_rendered_pb = get_pb_image(img_rendered)
-            tracer.end_span(span4)
-
+            # serialize and publish rendered image
             topic_rendered = re_topic.sub(r'Skeletons.\1.Rendered', msg.topic())
             msg_rendered = Message()
             msg_rendered.pack(img_rendered_pb).set_topic(topic_rendered)
             c.publish(msg_rendered)
-
+            #
             log_context['rpc-status'] = {'code': 'OK'}
         except Exception as ex:
             why = 'Can\'t detect skeletons on image from {}.\n{}'.format(msg.topic(), ex)

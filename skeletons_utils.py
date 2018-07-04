@@ -8,6 +8,7 @@ from skeletons_pb2 import SkeletonModel
 from skeletons_pb2 import SkeletonPartType as SPT
 import cv2
 import numpy as np
+from itertools import permutations
 
 from time import time
 
@@ -30,25 +31,23 @@ def load_options():
 def get_links(model):
     if model == SkeletonModel.Value('COCO'):
         return [
-            (SPT.Value('NECK'),           SPT.Value('RIGHT_SHOULDER')),
-            (SPT.Value('NECK'),           SPT.Value('LEFT_SHOULDER')),
+            (SPT.Value('NECK'), SPT.Value('LEFT_SHOULDER')),
+            (SPT.Value('LEFT_SHOULDER'), SPT.Value('LEFT_ELBOW')),
+            (SPT.Value('LEFT_ELBOW'), SPT.Value('LEFT_WRIST')),
+            (SPT.Value('NECK'), SPT.Value('LEFT_HIP')),
+            (SPT.Value('LEFT_HIP'), SPT.Value('LEFT_KNEE')),
+            (SPT.Value('LEFT_KNEE'), SPT.Value('LEFT_ANKLE')),
+            (SPT.Value('NECK'), SPT.Value('RIGHT_SHOULDER')),
             (SPT.Value('RIGHT_SHOULDER'), SPT.Value('RIGHT_ELBOW')),
-            (SPT.Value('RIGHT_ELBOW'),    SPT.Value('RIGHT_WRIST')),
-            (SPT.Value('LEFT_SHOULDER'),  SPT.Value('LEFT_ELBOW')),
-            (SPT.Value('LEFT_ELBOW'),     SPT.Value('LEFT_WRIST')),
-            (SPT.Value('NECK'),           SPT.Value('RIGHT_HIP')),
-            (SPT.Value('RIGHT_HIP'),      SPT.Value('RIGHT_KNEE')),
-            (SPT.Value('RIGHT_KNEE'),     SPT.Value('RIGHT_ANKLE')),
-            (SPT.Value('NECK'),           SPT.Value('LEFT_HIP')),
-            (SPT.Value('LEFT_HIP'),       SPT.Value('LEFT_KNEE')),
-            (SPT.Value('LEFT_KNEE'),      SPT.Value('LEFT_ANKLE')),
-            (SPT.Value('NECK'),           SPT.Value('NOSE')),
-            (SPT.Value('NOSE'),           SPT.Value('RIGHT_EYE')),
-            (SPT.Value('RIGHT_EYE'),      SPT.Value('RIGHT_EAR')),
-            (SPT.Value('NOSE'),           SPT.Value('LEFT_EYE')),
-            (SPT.Value('LEFT_EYE'),       SPT.Value('LEFT_EAR')),
-            (SPT.Value('RIGHT_SHOULDER'), SPT.Value('RIGHT_EAR')),
-            (SPT.Value('LEFT_SHOULDER'),  SPT.Value('LEFT_EAR'))
+            (SPT.Value('RIGHT_ELBOW'), SPT.Value('RIGHT_WRIST')),
+            (SPT.Value('NECK'), SPT.Value('RIGHT_HIP')),
+            (SPT.Value('RIGHT_HIP'), SPT.Value('RIGHT_KNEE')),
+            (SPT.Value('RIGHT_KNEE'), SPT.Value('RIGHT_ANKLE')),
+            # (SPT.Value('NECK'), SPT.Value('NOSE')),
+            (SPT.Value('NOSE'), SPT.Value('LEFT_EYE')),
+            (SPT.Value('LEFT_EYE'), SPT.Value('LEFT_EAR')),
+            (SPT.Value('NOSE'), SPT.Value('RIGHT_EYE')),
+            (SPT.Value('RIGHT_EYE'), SPT.Value('RIGHT_EAR'))
         ]
     elif model == SkeletonModel.Value('MPI'):
         # TODO
@@ -56,34 +55,23 @@ def get_links(model):
     else:
         return []
 
-def get_links_colors(model):
+def get_face_parts(model):
     if model == SkeletonModel.Value('COCO'):
-       return [
-           (255, 0,   0  ),
-           (255, 85,  0  ),
-           (255, 170, 0  ),
-           (255, 255, 0  ),
-           (170, 255, 0  ),
-           (85,  255, 0  ),
-           (0,   255, 0  ),
-           (0,   255, 85 ),
-           (0,   255, 170),
-           (0,   255, 255),
-           (0,   170, 255),
-           (0,   85,  255),
-           (0,   0,   255),
-           (85,  0,   255),
-           (170, 0,   255),
-           (255, 0,   255),
-           (255, 0,   170),
-           (255, 0,   85 ),
-           (255, 170, 85 )
+        return [
+            SPT.Value('NOSE'),
+            SPT.Value('LEFT_EYE'),
+            SPT.Value('LEFT_EAR'),
+            SPT.Value('RIGHT_EYE'),
+            SPT.Value('RIGHT_EAR')
         ]
     elif model == SkeletonModel.Value('MPI'):
         # TODO
         return []
     else:
         return []
+
+def get_links_colors():
+    return list(permutations([0, 255, 85, 170], 3))
 
 def get_np_image(input_image):
     if isinstance(input_image, np.ndarray):
@@ -114,20 +102,17 @@ def get_pb_image(input_image, encode_format='.jpeg', compression_level=0.8):
 def draw_skeletons(input_image, skeletons):
     image = get_np_image(input_image)
     links = get_links(skeletons.model)
-    colors = get_links_colors(skeletons.model)
+    face_parts = get_face_parts(skeletons.model)
+    colors = get_links_colors()
     for sk in skeletons.skeletons:
-        joints = {}
-        for joint in sk.parts:
-            joints[joint.type] = {
-                'x': joint.x,
-                'y': joint.y,
-                'z': joint.z,
-                'score': joint.score
-            }
-        for k, link in enumerate(links):
-            if link[0] not in joints.keys() or link[1] not in joints.keys():
-                continue
-            pt1 = (round(joints[link[0]]['x']), round(joints[link[0]]['y']))
-            pt2 = (round(joints[link[1]]['x']), round(joints[link[1]]['y']))
-            cv2.line(img=image, pt1=pt1, pt2=pt2, color=colors[k], thickness=3)
+        parts = {}
+        for part in sk.parts:
+            parts[part.type] = (int(part.x), int(part.y))
+        for link_parts, color in zip(links, colors):
+            begin, end = link_parts
+            if begin in parts and end in parts:
+                cv2.line(image, parts[begin], parts[end], color=color, thickness=4)
+        for ptype, center in parts.items():
+            radius = 2 if ptype in face_parts else 4
+            cv2.circle(image, center=center, radius=radius, color=(255, 255, 255), thickness=-1)
     return image
