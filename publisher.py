@@ -2,7 +2,6 @@ import re
 import sys
 import cv2
 import numpy as np
-from skeletons_pb2 import Skeletons
 from is_msgs.image_pb2 import Image
 from is_wire.core import Channel, Subscription, Message, ZipkinTracer, Logger
 

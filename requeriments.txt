@@ -1,0 +1,4 @@
+is-wire==1.0.5
+is-msgs==1.1.7
+opencv-python==3.3.1.*
+psutil==5.4.5

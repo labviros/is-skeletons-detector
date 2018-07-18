@@ -1,7 +1,6 @@
 from skeletons_utils import get_np_image, get_links
 from options_pb2 import Options
-from skeletons_pb2 import Skeleton, SkeletonPart, Skeletons, SkeletonModel, SkeletonPartType
-from is_msgs.image_pb2 import Image
+from is_msgs.image_pb2 import Image, ObjectAnnotations, ObjectLabels, HumanKeypoints
 import cv2
 import numpy as np
 import tf_pose_estimation.common as common
@@ -20,25 +19,24 @@ class SkeletonsDetector:
         graph_path = get_graph_path(model_name=model_name, base_path=self.__op.models_folder)
         self.__e = TfPoseEstimator(graph_path, target_size=(w, h))
         self.__to_sks_part = {
-            0 : SkeletonPartType.Value('NOSE'),
-            1 : SkeletonPartType.Value('NECK'),
-            2 : SkeletonPartType.Value('RIGHT_SHOULDER'),
-            3 : SkeletonPartType.Value('RIGHT_ELBOW'),
-            4 : SkeletonPartType.Value('RIGHT_WRIST'),
-            5 : SkeletonPartType.Value('LEFT_SHOULDER'),
-            6 : SkeletonPartType.Value('LEFT_ELBOW'),
-            7 : SkeletonPartType.Value('LEFT_WRIST'),
-            8 : SkeletonPartType.Value('RIGHT_HIP'),
-            9 : SkeletonPartType.Value('RIGHT_KNEE'),
-            10: SkeletonPartType.Value('RIGHT_ANKLE'),
-            11: SkeletonPartType.Value('LEFT_HIP'),
-            12: SkeletonPartType.Value('LEFT_KNEE'),
-            13: SkeletonPartType.Value('LEFT_ANKLE'),
-            14: SkeletonPartType.Value('RIGHT_EYE'),
-            15: SkeletonPartType.Value('LEFT_EYE'),
-            16: SkeletonPartType.Value('RIGHT_EAR'),
-            17: SkeletonPartType.Value('LEFT_EAR'),
-            18: SkeletonPartType.Value('BACKGROUND')
+            0 : HumanKeypoints.Value('NOSE'),
+            1 : HumanKeypoints.Value('NECK'),
+            2 : HumanKeypoints.Value('RIGHT_SHOULDER'),
+            3 : HumanKeypoints.Value('RIGHT_ELBOW'),
+            4 : HumanKeypoints.Value('RIGHT_WRIST'),
+            5 : HumanKeypoints.Value('LEFT_SHOULDER'),
+            6 : HumanKeypoints.Value('LEFT_ELBOW'),
+            7 : HumanKeypoints.Value('LEFT_WRIST'),
+            8 : HumanKeypoints.Value('RIGHT_HIP'),
+            9 : HumanKeypoints.Value('RIGHT_KNEE'),
+            10: HumanKeypoints.Value('RIGHT_ANKLE'),
+            11: HumanKeypoints.Value('LEFT_HIP'),
+            12: HumanKeypoints.Value('LEFT_KNEE'),
+            13: HumanKeypoints.Value('LEFT_ANKLE'),
+            14: HumanKeypoints.Value('RIGHT_EYE'),
+            15: HumanKeypoints.Value('LEFT_EYE'),
+            16: HumanKeypoints.Value('RIGHT_EAR'),
+            17: HumanKeypoints.Value('LEFT_EAR'),
         }
 
     '''
@@ -52,17 +50,20 @@ class SkeletonsDetector:
             upsample_size=self.__op.resize_out_ratio)
 
         im_h, im_w = _image.shape[:2]
-        return self.__to_skeletons(humans, im_w, im_h)
+        return self.__to_object_annotations(humans, im_w, im_h)
 
-    def __to_skeletons(self, humans, im_width, im_height):
-        sks = Skeletons()
+    def __to_object_annotations(self, humans, im_width, im_height):
+        obs = ObjectAnnotations()
         for human in humans:
-            sk = sks.skeletons.add()
+            ob = obs.objects.add()
             for part_id, bp in human.body_parts.items():
-                part = sk.parts.add()
-                part.x = bp.x * im_width
-                part.y = bp.y * im_height
-                part.type = self.__to_sks_part[part_id]
+                part = ob.keypoints.add()
+                part.id = self.__to_sks_part[part_id]
+                part.position.x = bp.x * im_width
+                part.position.y = bp.y * im_height
                 part.score = bp.score
-        sks.model = SkeletonModel.Value('COCO')
-        return sks
+            ob.label = "human_skeleton"
+            ob.id = ObjectLabels.Value('HUMAN_SKELETON')
+        obs.resolution.width = im_width
+        obs.resolution.height = im_height
+        return obs

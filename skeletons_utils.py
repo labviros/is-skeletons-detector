@@ -2,10 +2,8 @@ import sys
 from is_wire.core import Logger
 from google.protobuf.json_format import Parse
 from options_pb2 import Options
-from skeletons_pb2 import Skeletons
-from is_msgs.image_pb2 import Image
-from skeletons_pb2 import SkeletonModel
-from skeletons_pb2 import SkeletonPartType as SPT
+from is_msgs.image_pb2 import Image, ObjectAnnotations, ObjectLabels
+from is_msgs.image_pb2 import HumanKeypoints as HKP
 import cv2
 import numpy as np
 from itertools import permutations
@@ -28,43 +26,42 @@ def load_options():
     except Exception as ex:
         log.critical('Unable to open file \'{}\'', op_file)
 
-def get_links(model):
-    if model == SkeletonModel.Value('COCO'):
+def get_links(model='COCO'):
+    if model == 'COCO':
         return [
-            (SPT.Value('NECK'), SPT.Value('LEFT_SHOULDER')),
-            (SPT.Value('LEFT_SHOULDER'), SPT.Value('LEFT_ELBOW')),
-            (SPT.Value('LEFT_ELBOW'), SPT.Value('LEFT_WRIST')),
-            (SPT.Value('NECK'), SPT.Value('LEFT_HIP')),
-            (SPT.Value('LEFT_HIP'), SPT.Value('LEFT_KNEE')),
-            (SPT.Value('LEFT_KNEE'), SPT.Value('LEFT_ANKLE')),
-            (SPT.Value('NECK'), SPT.Value('RIGHT_SHOULDER')),
-            (SPT.Value('RIGHT_SHOULDER'), SPT.Value('RIGHT_ELBOW')),
-            (SPT.Value('RIGHT_ELBOW'), SPT.Value('RIGHT_WRIST')),
-            (SPT.Value('NECK'), SPT.Value('RIGHT_HIP')),
-            (SPT.Value('RIGHT_HIP'), SPT.Value('RIGHT_KNEE')),
-            (SPT.Value('RIGHT_KNEE'), SPT.Value('RIGHT_ANKLE')),
-            # (SPT.Value('NECK'), SPT.Value('NOSE')),
-            (SPT.Value('NOSE'), SPT.Value('LEFT_EYE')),
-            (SPT.Value('LEFT_EYE'), SPT.Value('LEFT_EAR')),
-            (SPT.Value('NOSE'), SPT.Value('RIGHT_EYE')),
-            (SPT.Value('RIGHT_EYE'), SPT.Value('RIGHT_EAR'))
+            (HKP.Value('NECK'), HKP.Value('LEFT_SHOULDER')),
+            (HKP.Value('LEFT_SHOULDER'), HKP.Value('LEFT_ELBOW')),
+            (HKP.Value('LEFT_ELBOW'), HKP.Value('LEFT_WRIST')),
+            (HKP.Value('NECK'), HKP.Value('LEFT_HIP')),
+            (HKP.Value('LEFT_HIP'), HKP.Value('LEFT_KNEE')),
+            (HKP.Value('LEFT_KNEE'), HKP.Value('LEFT_ANKLE')),
+            (HKP.Value('NECK'), HKP.Value('RIGHT_SHOULDER')),
+            (HKP.Value('RIGHT_SHOULDER'), HKP.Value('RIGHT_ELBOW')),
+            (HKP.Value('RIGHT_ELBOW'), HKP.Value('RIGHT_WRIST')),
+            (HKP.Value('NECK'), HKP.Value('RIGHT_HIP')),
+            (HKP.Value('RIGHT_HIP'), HKP.Value('RIGHT_KNEE')),
+            (HKP.Value('RIGHT_KNEE'), HKP.Value('RIGHT_ANKLE')),
+            (HKP.Value('NOSE'), HKP.Value('LEFT_EYE')),
+            (HKP.Value('LEFT_EYE'), HKP.Value('LEFT_EAR')),
+            (HKP.Value('NOSE'), HKP.Value('RIGHT_EYE')),
+            (HKP.Value('RIGHT_EYE'), HKP.Value('RIGHT_EAR'))
         ]
-    elif model == SkeletonModel.Value('MPI'):
+    elif model == 'MPI':
         # TODO
         return []
     else:
         return []
 
-def get_face_parts(model):
-    if model == SkeletonModel.Value('COCO'):
+def get_face_parts(model='COCO'):
+    if model == 'COCO':
         return [
-            SPT.Value('NOSE'),
-            SPT.Value('LEFT_EYE'),
-            SPT.Value('LEFT_EAR'),
-            SPT.Value('RIGHT_EYE'),
-            SPT.Value('RIGHT_EAR')
+            HKP.Value('NOSE'),
+            HKP.Value('LEFT_EYE'),
+            HKP.Value('LEFT_EAR'),
+            HKP.Value('RIGHT_EYE'),
+            HKP.Value('RIGHT_EAR')
         ]
-    elif model == SkeletonModel.Value('MPI'):
+    elif model == 'MPI':
         # TODO
         return []
     else:
@@ -101,13 +98,13 @@ def get_pb_image(input_image, encode_format='.jpeg', compression_level=0.8):
 
 def draw_skeletons(input_image, skeletons):
     image = get_np_image(input_image)
-    links = get_links(skeletons.model)
-    face_parts = get_face_parts(skeletons.model)
+    links = get_links()
+    face_parts = get_face_parts()
     colors = get_links_colors()
-    for sk in skeletons.skeletons:
+    for ob in skeletons.objects:
         parts = {}
-        for part in sk.parts:
-            parts[part.type] = (int(part.x), int(part.y))
+        for part in ob.keypoints:
+            parts[part.id] = (int(part.position.x), int(part.position.y))
         for link_parts, color in zip(links, colors):
             begin, end = link_parts
             if begin in parts and end in parts:

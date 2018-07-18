@@ -12,7 +12,7 @@ fi
 docker_user="viros"
 
 function build_image {
-    image_tag="${docker_user}/is-skeletons:1-$1"
+    image_tag="${docker_user}/is-skeletons:1.1-$1"
     docker build . -f Dockerfile.$1 -t ${image_tag} --network=host --no-cache
     read -r -p "Do you want to push image ${image_tag}? [y/N] " response
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
