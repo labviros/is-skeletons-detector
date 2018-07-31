@@ -11,32 +11,16 @@ sd = SkeletonsDetector(op)
 log = Logger()
 c = Channel(op.broker_uri)
 log.info('Connected to broker {}', op.broker_uri)
-sb = Subscription(c, 'Skeletons.Detector')
-tracer = ZipkinTracer(host_name=op.zipkin_host, port=op.zipkin_port, service_name='Skeletons')
+service_name = 'Skeletons.Detector'
+sb = Subscription(c, service_name)
+tracer = ZipkinTracer(host_name=op.zipkin_host, port=op.zipkin_port, service_name=service_name)
 log_int = LogInterceptor()
 re_topic = re.compile(r'CameraGateway.(\w+).Frame')
 
-def render(q):
-    cr = Channel(op.broker_uri)
-    while True:
-        img, skeletons, context, topic = q.get()
-        span1 = tracer.start_span('render', context=context)
-        img_rendered = draw_skeletons(img, skeletons)
-        tracer.end_span(span1)
 
-        span2 = tracer.start_span('encode_rendered', context=context)
-        img_rendered_pb = get_pb_image(img_rendered)
-        tracer.end_span(span2)
-
-        topic_rendered = re_topic.sub(r'Skeletons.\1.Rendered', topic)
-        msg = Message()
-        msg.pack(img_rendered_pb).set_topic(topic_rendered)
-        cr.publish(msg)
-        q.task_done()
-
-@tracer.interceptor('Detect')
+@tracer.interceptor('Detection')
 def on_image(msg, context):
-    log_context = {'service_name': 'Skeletons.Detect'}
+    log_context = {'service_name': service_name}
     log_context = log_int.before_call(log_context)
     
     im = msg.unpack(Image)
