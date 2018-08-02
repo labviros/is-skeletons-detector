@@ -1,26 +1,57 @@
 #!/bin/bash
 set -e
 
-image_build_render='p35-alpine-opencv331'
-image_count=`docker images --filter="reference=${image_build_render}" -q | wc -l`
-if [[ $image_count == 0 ]]; then
-    echo "Docker image ${image_build_render} not found. Building..."
+function docker::has_image {
+    image_count=`docker images --filter="reference=$1" -q | wc -l`
+    if [[ ${image_count} == 0 ]]; then
+        echo "!! Image '$1' not found"
+        return 1
+    fi
+    return 0
+}
+
+function docker::build_local {
+    tag=$1
+    dockerfile=$2
+    echo "!! Building '${tag}'"
     sleep 2
-    docker build . -f Dockerfile.alpine_opencv -t ${image_build_render} --no-cache --network=host
-fi
+    docker build . -f ${dockerfile} -t ${tag} --no-cache --network=host
+}
 
-docker_user="viros"
-
-function build_image {
-    image_tag="${docker_user}/is-skeletons:1.2-$1"
-    docker build . -f Dockerfile.$1 -t ${image_tag} --network=host --no-cache
-    read -r -p "Do you want to push image ${image_tag}? [y/N] " response
+function docker::push_image {
+    local_tag=$1
+    remote_tag=${docker_user}/$2
+    read -r -p "?? Do you want to push image ${remote_tag}? [y/N] " response
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-        echo "Log-in as '${docker_user}' at Docker registry:"
+        docker tag ${local_tag} ${remote_tag}
+        echo "!! Log-in as '${docker_user}' at Docker registry:"
         docker login -u ${docker_user}
-        docker push ${image_tag}
+        docker push ${remote_tag}
     fi
 }
 
+function docker::rebuild_image {
+    read -r -p "?? Image '$1' already existis, do you want to rebuild it? [y/N] " response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+        echo "!! Ruilding '$1'"
+        return 0
+    fi
+    return 1
+}
+
+image_dev='is-skeletons-detector/dev'
+docker_user="viros"
+remote_tag='is-skeletons-detector:1'
+
 bash get_models.sh
-build_image detector
+
+if ! docker::has_image ${image_dev}; then
+    docker::build_local ${image_dev} Dockerfile.dev_gpu
+elif docker::rebuild_image ${image_dev}; then
+    docker::build_local ${image_dev} Dockerfile.dev_gpu
+else
+    echo "!! Alreary have image '$image_dev'"
+fi
+
+docker::build_local sks_detector Dockerfile.detector
+docker::push_image sks_detector ${remote_tag}

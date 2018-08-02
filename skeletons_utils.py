@@ -11,7 +11,7 @@ from itertools import permutations
 from time import time
 
 def load_options():
-    log = Logger()
+    log = Logger(name='LoadingOptions')
     op_file = sys.argv[1] if len(sys.argv) > 1 else 'options.json'
     try:
         with open(op_file, 'r') as f:
