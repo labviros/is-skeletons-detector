@@ -2,35 +2,46 @@ import re
 import sys
 import cv2
 import numpy as np
+import time
 from is_msgs.image_pb2 import Image
-from is_wire.core import Channel, Subscription, Message, ZipkinTracer, Logger
+from is_wire.core import Channel, Message, Logger
+from is_wire.core import Tracer, ZipkinExporter, BackgroundThreadTransport
 
-broker_uri = 'amqp://localhost:5672'
+log = Logger(name='Publisher')
+
 topic_id = 0
+broker_uri='amqp://localhost:5672'
 if len(sys.argv) != 3 and len(sys.argv) != 1:
     log.critical('Invalid arguments. Try: python render.py <BROKER_URI> <TOPIC_ID>')
 if len(sys.argv) > 1:
     broker_uri = sys.argv[1]
-    if not re_uri.match(broker_uri):
-        log.critical('Invalid broker uri \'{}\'. Use the pattern: amqp://<HOSTNAME>:<PORT>', broker_uri)
     topic_id = sys.argv[2]
-    if not re_id.match(topic_id):
-        log.critical('Invalid topic id \'{}\'. It must contains just [a-zA-Z0-9_] characters.', topic_id)
 
-c = Channel()
-sb = Subscription(c)
-tracer = ZipkinTracer(service_name='CameraGateway.{}'.format(topic_id))
-log = Logger()
+channel = Channel(broker_uri)
+exporter = ZipkinExporter(
+    service_name='CameraGateway.{}'.format(topic_id),
+    host_name='localhost',
+    port=9411,
+    transport=BackgroundThreadTransport,
+)
 
 image = cv2.imread('image.png')
 
-for k in range(100):
-    span = tracer.start_span('Frame')
-    cimage = cv2.imencode('.png', image)
-    data = cimage[1].tobytes()
-    im = Image(data=data)
-    msg = Message()
-    topic = 'CameraGateway.{}.Frame'.format(topic_id)
-    msg.pack(im).set_topic(topic).add_metadata(span)
-    c.publish(msg)
-    tracer.end_span(span)
+for k in range(10):
+    tracer = Tracer(exporter)
+    with tracer.span(name='image') as span:
+        cimage = cv2.imencode(
+            ext='.jpeg',
+            img=image,
+            params=[cv2.IMWRITE_JPEG_QUALITY, 80]
+        )
+        data = cimage[1].tobytes()
+        im = Image(data=data)
+        msg = Message()
+        msg.topic = 'CameraGateway.{}.Frame'.format(topic_id)
+        msg.inject_tracing(span)
+        msg.metadata.update({'image_id': k})
+        msg.pack(im)
+        channel.publish(msg)
+        log.info('Message {} published', k)
+    time.sleep(0.250)

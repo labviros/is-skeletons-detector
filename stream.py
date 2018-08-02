@@ -1,61 +1,66 @@
 import re
-from is_wire.core import Channel, Subscription, Message, Logger, ZipkinTracer
-from is_wire.rpc import LogInterceptor
+import dateutil.parser as dp 
+from stream_channel import StreamChannel
+from is_wire.core import Subscription, Message, Logger
+from is_wire.core import Tracer, ZipkinExporter, BackgroundThreadTransport
 from is_msgs.image_pb2 import Image
 from skeletons import SkeletonsDetector
 from skeletons_utils import load_options, get_np_image, get_pb_image, draw_skeletons
 
+
+def span_duration_ms(span):
+    dt = dp.parse(span.end_time) - dp.parse(span.start_time)
+    return dt.total_seconds() * 1000.0
+
+
+service_name = 'Skeletons.Detection'
+re_topic = re.compile(r'CameraGateway.(\w+).Frame')
+
 op = load_options()
 sd = SkeletonsDetector(op)
 
-log = Logger()
-c = Channel(op.broker_uri)
+log = Logger(name=service_name)
+channel = StreamChannel(op.broker_uri)
 log.info('Connected to broker {}', op.broker_uri)
-service_name = 'Skeletons.Detector'
-sb = Subscription(c, service_name)
-tracer = ZipkinTracer(host_name=op.zipkin_host, port=op.zipkin_port, service_name=service_name)
-log_int = LogInterceptor()
-re_topic = re.compile(r'CameraGateway.(\w+).Frame')
 
+exporter = ZipkinExporter(
+    service_name=service_name,
+    host_name=op.zipkin_host,
+    port=op.zipkin_port,
+    transport=BackgroundThreadTransport,
+)
 
-@tracer.interceptor('Detection')
-def on_image(msg, context):
-    log_context = {'service_name': service_name}
-    log_context = log_int.before_call(log_context)
-    
-    im = msg.unpack(Image)
-    msg_reply = None
-    if im:
-        try:
-            # convert image to numpy
-            im_np = get_np_image(im)
-            # detect skeletons
-            skeletons = sd.detect(im_np)
-            # create Skeletons message and publish
-            msg_reply = Message()
-            topic = re_topic.sub(r'Skeletons.\1.Detections', msg.topic())
-            msg_reply.pack(skeletons).set_topic(topic).add_metadata(context)
-            c.publish(msg_reply)
-            # render skeletons
-            img_rendered = draw_skeletons(im_np, skeletons)
-            # converte image to protobuf Image
-            img_rendered_pb = get_pb_image(img_rendered)
-            # serialize and publish rendered image
-            topic_rendered = re_topic.sub(r'Skeletons.\1.Rendered', msg.topic())
-            msg_rendered = Message()
-            msg_rendered.pack(img_rendered_pb).set_topic(topic_rendered)
-            c.publish(msg_rendered)
-            #
-            log_context['rpc-status'] = {'code': 'OK'}
-        except Exception as ex:
-            why = 'Can\'t detect skeletons on image from {}.\n{}'.format(msg.topic(), ex)
-            log_context['rpc-status'] = {'code': 'INTERNAL_ERROR', 'why': why}
-    else:
-        why = 'Expected message type \'{}\' but received something else'.format(Image.DESCRIPTOR.full_name)
-        log_context['rpc-status'] = {'code': 'FAILED_PRECONDITION', 'why': why}
+subscription = Subscription(channel=channel, name=service_name)
+subscription.subscribe('CameraGateway.*.Frame')
 
-    log_context = log_int.after_call(log_context)
+while True:
+    msg, dropped = channel.consume(return_dropped=True)
 
+    tracer = Tracer(exporter, span_context=msg.extract_tracing())
+    span = tracer.start_span(name='detection_and_render')
 
-sb.subscribe('CameraGateway.*.Frame', on_image)
-c.listen()
+    with tracer.span(name='unpack'):
+        im = msg.unpack(Image)
+        im_np = get_np_image(im)
+    with tracer.span(name='detect'):
+        skeletons = sd.detect(im_np)
+    with tracer.span(name='pack_and_publish_detections'):
+        sks_msg = Message()
+        sks_msg.topic = re_topic.sub(r'Skeletons.\1.Detection', msg.topic)
+        sks_msg.inject_tracing(span)
+        sks_msg.pack(skeletons)
+        channel.publish(sks_msg)
+    with tracer.span(name='render_pack_publish'):
+        im_rendered = draw_skeletons(im_np, skeletons)
+        rendered_msg = Message()
+        rendered_msg.topic = re_topic.sub(r'Skeletons.\1.Rendered', msg.topic)
+        rendered_msg.pack(get_pb_image(im_rendered))
+        channel.publish(rendered_msg)
+
+    span.add_attribute('Detections', len(skeletons.objects))
+    tracer.end_span()
+    log.info('[Detections: {:2d}][{:5.2f}ms][Dropped {}]',
+        len(skeletons.objects),
+        span_duration_ms(span),
+        dropped
+    )
