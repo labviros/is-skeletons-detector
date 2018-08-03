@@ -34,3 +34,9 @@ If it is the first time you run this script, a message will be prompt indicating
 ```shell
 docker run -ti --rm --runtime=nvidia --network=host -v `pwd`:/devel is-skeletons-detector/dev bash
 ```
+
+In case you need to make any change on options protobuf file, will be necessary to rebuild the python file related to it. For do that, you can use a docker image running the command below. You can find more information about this way to build [here](https://github.com/felippe-mendonca/is-msgs-protoc-py).
+
+```shell
+docker run --rm -v `pwd`:/protos mendonca/is-msgs-protoc:1.1.7 options.proto
+```
