@@ -14,6 +14,7 @@ message Options {
   string broker_uri = 1;
   string zipkin_host = 2;
   uint32 zipkin_port = 3;
+  uint32 zipkin_batch_size = 9;
   string models_folder = 4;
   Model model = 5;
   Resize resize = 6;

@@ -22,7 +22,7 @@ exporter = ZipkinExporter(
     service_name='CameraGateway.{}'.format(topic_id),
     host_name='localhost',
     port=9411,
-    transport=BackgroundThreadTransport,
+    transport=BackgroundThreadTransport(max_batch_size=100),
 )
 
 image = cv2.imread('image.png')

@@ -23,11 +23,12 @@ log = Logger(name=service_name)
 channel = StreamChannel(op.broker_uri)
 log.info('Connected to broker {}', op.broker_uri)
 
+max_batch_size = max(100, op.zipkin_batch_size)
 exporter = ZipkinExporter(
     service_name=service_name,
     host_name=op.zipkin_host,
     port=op.zipkin_port,
-    transport=BackgroundThreadTransport,
+    transport=BackgroundThreadTransport(max_batch_size=max_batch_size),
 )
 
 subscription = Subscription(channel=channel, name=service_name)
