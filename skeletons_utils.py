@@ -17,6 +17,9 @@ def load_options():
         with open(op_file, 'r') as f:
             try:
                 op = Parse(f.read(), Options())
+                mem_frac = op.per_process_gpu_memory_fraction 
+                if mem_frac < 0.0 or mem_frac > 1.0:
+                    log.critical("Invalid value for 'per_process_gpu_memory_fraction': {}. Must be in [0.0, 1.0]", mem_frac)
                 log.info('Options: \n{}', op)
                 return op
             except Exception as ex:

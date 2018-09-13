@@ -41,7 +41,7 @@ function docker::rebuild_image {
 
 image_dev='is-skeletons-detector/dev'
 docker_user="viros"
-remote_tag='is-skeletons-detector:1'
+remote_tag='is-skeletons-detector:1.1'
 
 bash get_models.sh
 
