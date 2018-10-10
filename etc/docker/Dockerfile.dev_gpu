@@ -9,9 +9,6 @@ RUN pip uninstall -y jupyter ipykernel                               \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git wget libsm6 libxext6 libxrender-dev 
 
-ADD requeriments.txt /tmp/
-RUN cd /tmp && pip install --user -r requeriments.txt
-
 RUN cd /tmp                                                  \
  && git clone https://github.com/ildoonet/tf-pose-estimation \
  && cd tf-pose-estimation                                    \
