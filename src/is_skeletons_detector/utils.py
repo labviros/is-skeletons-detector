@@ -1,14 +1,14 @@
 import sys
-from is_wire.core import Logger
-from google.protobuf.json_format import Parse
-from options_pb2 import Options
-from is_msgs.image_pb2 import Image, ObjectAnnotations, ObjectLabels
-from is_msgs.image_pb2 import HumanKeypoints as HKP
 import cv2
 import numpy as np
 from itertools import permutations
+from google.protobuf.json_format import Parse
 
-from time import time
+from is_wire.core import Logger
+from is_msgs.image_pb2 import Image, ObjectAnnotations, ObjectLabels
+from is_msgs.image_pb2 import HumanKeypoints as HKP
+from .options_pb2 import SkeletonsDetectorOptions
+
 
 def load_options():
     log = Logger(name='LoadingOptions')
@@ -16,11 +16,13 @@ def load_options():
     try:
         with open(op_file, 'r') as f:
             try:
-                op = Parse(f.read(), Options())
-                mem_frac = op.per_process_gpu_memory_fraction 
+                op = Parse(f.read(), SkeletonsDetectorOptions())
+                mem_frac = op.per_process_gpu_memory_fraction
                 if mem_frac < 0.0 or mem_frac > 1.0:
-                    log.critical("Invalid value for 'per_process_gpu_memory_fraction': {}. Must be in [0.0, 1.0]", mem_frac)
-                log.info('Options: \n{}', op)
+                    log.critical(
+                        "Invalid value for 'per_process_gpu_memory_fraction': {}. Must be in [0.0, 1.0]",
+                        mem_frac)
+                log.info('SkeletonsDetectorOptions: \n{}', op)
                 return op
             except Exception as ex:
                 log.critical('Unable to load options from \'{}\'. \n{}', op_file, ex)
@@ -29,31 +31,31 @@ def load_options():
     except Exception as ex:
         log.critical('Unable to open file \'{}\'', op_file)
 
+
 def get_links(model='COCO'):
     if model == 'COCO':
-        return [
-            (HKP.Value('NECK'), HKP.Value('LEFT_SHOULDER')),
-            (HKP.Value('LEFT_SHOULDER'), HKP.Value('LEFT_ELBOW')),
-            (HKP.Value('LEFT_ELBOW'), HKP.Value('LEFT_WRIST')),
-            (HKP.Value('NECK'), HKP.Value('LEFT_HIP')),
-            (HKP.Value('LEFT_HIP'), HKP.Value('LEFT_KNEE')),
-            (HKP.Value('LEFT_KNEE'), HKP.Value('LEFT_ANKLE')),
-            (HKP.Value('NECK'), HKP.Value('RIGHT_SHOULDER')),
-            (HKP.Value('RIGHT_SHOULDER'), HKP.Value('RIGHT_ELBOW')),
-            (HKP.Value('RIGHT_ELBOW'), HKP.Value('RIGHT_WRIST')),
-            (HKP.Value('NECK'), HKP.Value('RIGHT_HIP')),
-            (HKP.Value('RIGHT_HIP'), HKP.Value('RIGHT_KNEE')),
-            (HKP.Value('RIGHT_KNEE'), HKP.Value('RIGHT_ANKLE')),
-            (HKP.Value('NOSE'), HKP.Value('LEFT_EYE')),
-            (HKP.Value('LEFT_EYE'), HKP.Value('LEFT_EAR')),
-            (HKP.Value('NOSE'), HKP.Value('RIGHT_EYE')),
-            (HKP.Value('RIGHT_EYE'), HKP.Value('RIGHT_EAR'))
-        ]
+        return [(HKP.Value('NECK'), HKP.Value('LEFT_SHOULDER')),
+                (HKP.Value('LEFT_SHOULDER'), HKP.Value('LEFT_ELBOW')),
+                (HKP.Value('LEFT_ELBOW'), HKP.Value('LEFT_WRIST')),
+                (HKP.Value('NECK'), HKP.Value('LEFT_HIP')),
+                (HKP.Value('LEFT_HIP'), HKP.Value('LEFT_KNEE')),
+                (HKP.Value('LEFT_KNEE'), HKP.Value('LEFT_ANKLE')),
+                (HKP.Value('NECK'), HKP.Value('RIGHT_SHOULDER')),
+                (HKP.Value('RIGHT_SHOULDER'), HKP.Value('RIGHT_ELBOW')),
+                (HKP.Value('RIGHT_ELBOW'), HKP.Value('RIGHT_WRIST')),
+                (HKP.Value('NECK'), HKP.Value('RIGHT_HIP')),
+                (HKP.Value('RIGHT_HIP'), HKP.Value('RIGHT_KNEE')),
+                (HKP.Value('RIGHT_KNEE'), HKP.Value('RIGHT_ANKLE')),
+                (HKP.Value('NOSE'), HKP.Value('LEFT_EYE')),
+                (HKP.Value('LEFT_EYE'), HKP.Value('LEFT_EAR')),
+                (HKP.Value('NOSE'), HKP.Value('RIGHT_EYE')),
+                (HKP.Value('RIGHT_EYE'), HKP.Value('RIGHT_EAR'))]
     elif model == 'MPI':
         # TODO
         return []
     else:
         return []
+
 
 def get_face_parts(model='COCO'):
     if model == 'COCO':
@@ -70,8 +72,10 @@ def get_face_parts(model='COCO'):
     else:
         return []
 
+
 def get_links_colors():
     return list(permutations([0, 255, 85, 170], 3))
+
 
 def get_np_image(input_image):
     if isinstance(input_image, np.ndarray):
@@ -91,13 +95,14 @@ def get_pb_image(input_image, encode_format='.jpeg', compression_level=0.8):
         elif encode_format == '.png':
             params = [cv2.IMWRITE_PNG_COMPRESSION, int(compression_level * (9 - 0) + 0)]
         else:
-            return Image()        
+            return Image()
         cimage = cv2.imencode(ext=encode_format, img=input_image, params=params)
         return Image(data=cimage[1].tobytes())
     elif isinstance(input_image, Image):
         return input_image
     else:
         return Image()
+
 
 def draw_skeletons(input_image, skeletons):
     image = get_np_image(input_image)

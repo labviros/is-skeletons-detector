@@ -1,6 +1,0 @@
-FROM is-skeletons-detector/dev
-
-COPY stream.py stream_channel.py skeletons.py skeletons_utils.py options_pb2.py options.json /skeletons/
-WORKDIR /skeletons
-
-CMD [ "/bin/bash" ]

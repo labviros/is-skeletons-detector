@@ -25,7 +25,7 @@ exporter = ZipkinExporter(
     transport=BackgroundThreadTransport(max_batch_size=100),
 )
 
-image = cv2.imread('image.png')
+image = cv2.imread('../image.png')
 
 for k in range(10):
     tracer = Tracer(exporter)

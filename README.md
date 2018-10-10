@@ -6,8 +6,8 @@ Streams
 
 | Name | Input (Topic/Message) | Output (Topic/Message) | Description |
 | ---- | --------------------- | ---------------------- | ----------- |
-| Skeletons.Detection | **CameraGateway.\d+.Frame** [Image] | **Skeletons.\d+.Detection** [ObjectAnnotations] | Detect skeletons on images published by cameras and publishes an ObjectAnnotations message containing all the skeletons detected |
-| Skeletons.Detection | **CameraGateway.\d+.Frame** [Image] | **Skeletons.\d+.Rendered** [Image] | After detection, skeletons are drew on input image and published for visualization. **NOTE:** *This stream will be deprecated after [mjpeg server](https://github.com/labviros/is-mjpeg-server) became able to render any [ObjectAnnotations]* |
+| Skeletons.Detection | **CameraGateway.\d+.Frame** [Image] | **SkeletonsDetector.\d+.Detection** [ObjectAnnotations] | Detect skeletons on images published by cameras and publishes an ObjectAnnotations message containing all the skeletons detected |
+| Skeletons.Detection | **CameraGateway.\d+.Frame** [Image] | **SkeletonsDetector.\d+.Rendered** [Image] | After detection, skeletons are drew on input image and published for visualization. **NOTE:** *This stream will be deprecated after [mjpeg server](https://github.com/labviros/is-mjpeg-server) became able to render any [ObjectAnnotations]* |
 
 [Image]: https://github.com/labviros/is-msgs/blob/modern-cmake/docs/README.md#is.vision.Image
 [ObjectAnnotations]: https://github.com/labviros/is-msgs/blob/modern-cmake/docs/README.md#is.vision.ObjectAnnotations
@@ -24,19 +24,22 @@ Beyond the model, you can choose the CNN (Convolutional Neural Network) input si
 Developing
 ---
 
-Once it's necessary to install many dependencies including NVIDIA Cuda libraries, a Docker image is created before the deployment image. This image can be user to perform tests during development. For that, simply run the script:
+Once it's necessary to install many dependencies including NVIDIA Cuda libraries, a Docker image is created before the deployment image. This image can be user to perform tests during development. For that, simply run the script [etc/docker/pack.sh](https://github.com/labviros/is-skeletons-detector/blob/master/etc/docker/pack.sh):
 
 ```shell
+cd etc/docker/
 bash pack.sh
 ```
-If it is the first time you run this script, a message will be prompt indicating that the image `is-skeletons-detector/dev` wasn't found, then the build process will occur. Now just run the command below inside you directory.
+If it is the first time you run this script, a message will be prompt indicating that the image `is-skeletons-detector/dev` wasn't found, then the build process will occur. Now just run the command below inside the project directory.
 
 ```shell
 docker run -ti --rm --runtime=nvidia --network=host -v `pwd`:/devel is-skeletons-detector/dev bash
 ```
 
-In case you need to make any change on options protobuf file, will be necessary to rebuild the python file related to it. For do that, you can use a docker image running the command below. You can find more information about this way to build [here](https://github.com/felippe-mendonca/is-msgs-protoc-py).
+In case you need to make any change on options protobuf file, will be necessary to rebuild the python file related to it. For do that, simply run the script [src/conf/gen_pb_py.sh](https://github.com/labviros/is-skeletons-detector/blob/master/etc/docker/pack.sh).
+
 
 ```shell
-docker run --rm -v `pwd`:/protos mendonca/is-msgs-protoc:1.1.7 options.proto
+cd src/conf/
+bash gen_pb_py.sh
 ```

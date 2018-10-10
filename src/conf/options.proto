@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-message Options {
+message SkeletonsDetectorOptions {
   enum Model {
     CMU = 0;
     MOBILENET_THIN = 1;
@@ -11,19 +11,19 @@ message Options {
     uint32 width = 1;
     uint32 height = 2;
   }
+
   string broker_uri = 1;
   string zipkin_host = 2;
   uint32 zipkin_port = 3;
-  uint32 zipkin_batch_size = 9;
-  string models_folder = 4;
+  uint32 zipkin_batch_size = 4;
   Model model = 5;
   Resize resize = 6;
   double resize_out_ratio = 7;
   uint32 render_topic = 8;
   // if true, only the necessary amount of memory will be alocated,
   // otherwise all available memory are allocate.
-  bool gpu_mem_allow_growth = 10;
+  bool gpu_mem_allow_growth = 9;
   // Limits the amount of memory available to the proccess alocate. 
   // If equals zero, no limit is applied.
-  double per_process_gpu_memory_fraction = 11;
+  double per_process_gpu_memory_fraction = 10;
 }
