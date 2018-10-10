@@ -36,7 +36,7 @@ If it is the first time you run this script, a message will be prompt indicating
 docker run -ti --rm --runtime=nvidia --network=host -v `pwd`:/devel is-skeletons-detector/dev bash
 ```
 
-In case you need to make any change on options protobuf file, will be necessary to rebuild the python file related to it. For do that, simply run the script [src/conf/gen_pb_py.sh](https://github.com/labviros/is-skeletons-detector/blob/master/etc/docker/pack.sh).
+In case you need to make any change on options protobuf file, will be necessary to rebuild the python file related to it. For do that, simply run the script [src/conf/gen_pb_py.sh](https://github.com/labviros/is-skeletons-detector/blob/master/src/conf/gen_pb_py.sh).
 
 
 ```shell
