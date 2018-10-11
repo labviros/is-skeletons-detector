@@ -9,9 +9,19 @@ Streams
 | Skeletons.Detection | **CameraGateway.\d+.Frame** [Image] | **SkeletonsDetector.\d+.Detection** [ObjectAnnotations] | Detect skeletons on images published by cameras and publishes an ObjectAnnotations message containing all the skeletons detected |
 | Skeletons.Detection | **CameraGateway.\d+.Frame** [Image] | **SkeletonsDetector.\d+.Rendered** [Image] | After detection, skeletons are drew on input image and published for visualization. **NOTE:** *This stream will be deprecated after [mjpeg server](https://github.com/labviros/is-mjpeg-server) became able to render any [ObjectAnnotations]* |
 
+- Note: run the `is-skeletons-detector-stream` to use this function.
+
+
+RPCs
+---
+| Service | Request | Reply | Description |
+| ------- | ------- | ------| ----------- |
+| SkeletonsDetector.Detect | **CameraGateway.\d+.Frame** [Image] | **SkeletonsDetector.\d+.Detection** [ObjectAnnotations] | Same purpose of stream shown above, but offered with a RPC server. |
+
 [Image]: https://github.com/labviros/is-msgs/blob/modern-cmake/docs/README.md#is.vision.Image
 [ObjectAnnotations]: https://github.com/labviros/is-msgs/blob/modern-cmake/docs/README.md#is.vision.ObjectAnnotations
 
+- Note: run the `is-skeletons-detector-rpc` to use this function.
 
 About
 ---
