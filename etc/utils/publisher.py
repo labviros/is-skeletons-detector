@@ -12,7 +12,7 @@ log = Logger(name='Publisher')
 topic_id = 0
 broker_uri='amqp://localhost:5672'
 if len(sys.argv) != 3 and len(sys.argv) != 1:
-    log.critical('Invalid arguments. Try: python render.py <BROKER_URI> <TOPIC_ID>')
+    log.critical('Invalid arguments. Try: python publisher.py <BROKER_URI> <TOPIC_ID>')
 if len(sys.argv) > 1:
     broker_uri = sys.argv[1]
     topic_id = sys.argv[2]

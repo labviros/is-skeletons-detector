@@ -11,7 +11,8 @@ setup(
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'is-skeletons-detector=is_skeletons_detector.service:main',
+            'is-skeletons-detector-stream=is_skeletons_detector.stream:main',
+            'is-skeletons-detector-rpc=is_skeletons_detector.rpc:main',
         ],
     },
     zip_safe=False,
