@@ -16,7 +16,7 @@ RPCs
 ---
 | Service | Request | Reply | Description |
 | ------- | ------- | ------| ----------- |
-| SkeletonsDetector.Detect | **CameraGateway.\d+.Frame** [Image] | **SkeletonsDetector.\d+.Detection** [ObjectAnnotations] | Same purpose of stream shown above, but offered with a RPC server. |
+| SkeletonsDetector.Detect | [Image] | [ObjectAnnotations] | Same purpose of stream shown above, but offered with a RPC server. |
 
 [Image]: https://github.com/labviros/is-msgs/blob/modern-cmake/docs/README.md#is.vision.Image
 [ObjectAnnotations]: https://github.com/labviros/is-msgs/blob/modern-cmake/docs/README.md#is.vision.ObjectAnnotations
