@@ -35,6 +35,8 @@ add_library(skeletons::detector ALIAS detector)
 ### utils library
 ######
 
+find_package(opencv REQUIRED)
+
 add_library(utils utils.cpp utils.hpp)
 
 target_link_libraries(
@@ -42,6 +44,7 @@ target_link_libraries(
  PUBLIC
   options::options
   is-msgs::is-msgs
+  opencv::opencv
  PRIVATE
   is-wire::is-wire
 )

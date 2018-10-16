@@ -13,7 +13,7 @@ class SkeletonsDetectorServiceConan(ConanFile):
         "fPIC": [True, False],
         "build_tests": [True, False],
     }
-    default_options = "shared=True", "fPIC=True", "build_tests=False"
+    default_options = "shared=False", "fPIC=True", "build_tests=False"
     generators = "cmake", "cmake_find_package", "cmake_paths", "virtualrunenv"
     requires = (
         "is-msgs/1.1.8@is/stable",

@@ -47,6 +47,7 @@ ObjectAnnotations SkeletonsDetector::detect(Image const& pb_image, int64_t const
 }
 
 ObjectAnnotations SkeletonsDetector::detect(cv::Mat const& cv_image, int64_t const& camera_id) {
+  this->last_cv_image = cv_image;
   const op::Point<int> image_size{cv_image.cols, cv_image.rows};
 
   std::vector<double> scale_input_to_netinputs;
@@ -61,6 +62,10 @@ ObjectAnnotations SkeletonsDetector::detect(cv::Mat const& cv_image, int64_t con
 
   const auto keypoints = pose_extractor->getPoseKeypoints();
   return make_skeletons(keypoints, image_size, camera_id);
+}
+
+cv::Mat SkeletonsDetector::last_image() {
+  return this->last_cv_image;
 }
 
 ObjectAnnotations SkeletonsDetector::make_skeletons(op::Array<float> const& keypoints,
@@ -106,10 +111,10 @@ is::vision::HumanKeypoints SkeletonsDetector::get_human_keypoint(std::string con
       {"LElbow", is::vision::HumanKeypoints::LEFT_ELBOW},
       {"LWrist", is::vision::HumanKeypoints::LEFT_WRIST},
       {"RHip", is::vision::HumanKeypoints::RIGHT_HIP},
-      {"RKenee", is::vision::HumanKeypoints::RIGHT_KNEE},
+      {"RKnee", is::vision::HumanKeypoints::RIGHT_KNEE},
       {"RAnkle", is::vision::HumanKeypoints::RIGHT_ANKLE},
       {"LHip", is::vision::HumanKeypoints::LEFT_HIP},
-      {"LKenee", is::vision::HumanKeypoints::LEFT_KNEE},
+      {"LKnee", is::vision::HumanKeypoints::LEFT_KNEE},
       {"LAnkle", is::vision::HumanKeypoints::LEFT_ANKLE},
       {"REye", is::vision::HumanKeypoints::RIGHT_EYE},
       {"LEye", is::vision::HumanKeypoints::LEFT_EYE},

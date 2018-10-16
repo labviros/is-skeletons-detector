@@ -18,6 +18,7 @@ class SkeletonsDetector {
   SkeletonsDetector(is::SkeletonsDetectorOptions const& options);
   ObjectAnnotations detect(Image const& pb_image, int64_t const& camera_id = 0);
   ObjectAnnotations detect(cv::Mat const& cv_image, int64_t const& camera_id = 0);
+  cv::Mat last_image();
 
  private:
   is::SkeletonsDetectorOptions options;
@@ -30,6 +31,7 @@ class SkeletonsDetector {
   op::Point<int> output_size;
   int32_t scale_number;
   double scale_gap;
+  cv::Mat last_cv_image;
 
   ObjectAnnotations make_skeletons(op::Array<float> const& keypoints,
                                    op::Point<int> const& image_size,

@@ -19,4 +19,4 @@ target_link_libraries(
   opencv::opencv
 )
 
-set_property(TARGET service.bin PROPERTY CXX_STANDARD 11)
+set_property(TARGET service.bin PROPERTY CXX_STANDARD 14)
