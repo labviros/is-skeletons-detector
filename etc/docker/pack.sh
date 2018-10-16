@@ -16,7 +16,7 @@ function docker::build_local {
     folder=$3
     echo "!! Building '${tag}'"
     sleep 2
-    docker build ${folder} -f ${dockerfile} -t ${tag} --no-cache --network=host
+    docker build ${folder} -f ${dockerfile} -t ${tag} --network=host
 }
 
 function docker::push_image {

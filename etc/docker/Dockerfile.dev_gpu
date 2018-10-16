@@ -1,19 +1,45 @@
-FROM tensorflow/tensorflow:1.11.0-gpu-py3
+FROM nvidia/cuda:8.0-cudnn5-devel
 
-RUN pip uninstall -y jupyter ipykernel                               \
- && rm -rf /notebooks                                                \ 
- && rm -f /run_jupyter.sh                                            \
- && rm -f /root/.jupyter/jupyter_notebook_config.py                  \
- && rm -f /tensorflow_gpu-1.11.0-cp35-cp35m-manylinux1_x86_64.whl
+WORKDIR /tmp/
+ADD bootstrap.sh .
+RUN bash bootstrap.sh
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git wget libsm6 libxext6 libxrender-dev 
+RUN apt purge -y python3-pip python-pip \
+    && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python3 get-pip.py \
+    && pip install conan_package_tools
+ENV CONAN_USERNAME is
+ENV CONAN_LOGIN_USERNAME is
+ENV CONAN_CHANNEL stable
 
-RUN cd /tmp                                                  \
- && git clone https://github.com/ildoonet/tf-pose-estimation \
- && cd tf-pose-estimation                                    \
- && git checkout b119759e8a41828c633bd39b5c883bf5a56a214f    \
- && cd models/graph/cmu/ && bash download.sh && cd ../../../ \
- && pip install --user .
+# build caffe and openpose packages
+ADD etc/packages/ /tmp/packages/
+WORKDIR /tmp/packages
+RUN cd caffe/           \
+    && python3 build.py \
+    && cd ../openpose/  \
+    && python3 build.py
 
+# genereal dependencies
+WORKDIR /tmp/
+ADD conanfile.py .
+RUN mkdir -p build_conan                                              \
+    && cd /tmp/build_conan                                            \
+    && conan install .. -s compiler.libcxx=libstdc++11 --build=missing
+
+WORKDIR /
+RUN mkdir -p /models/pose                                                                                                                                 
+RUN mkdir -p /models/pose/coco                                                                                                                         
+RUN mkdir -p /models/pose/mpi                                                                                                                          
+
+WORKDIR /models/pose/coco                                                                                                                              
+RUN wget -c http://posefs1.perception.cs.cmu.edu/OpenPose/models/pose/coco/pose_iter_440000.caffemodel                                                
+RUN wget -c https://raw.githubusercontent.com/CMU-Perceptual-Computing-Lab/openpose/v1.4.0/models/pose/coco/pose_deploy_linevec.prototxt              
+
+WORKDIR /models/pose/mpi                                                                                                                               
+RUN wget -c http://posefs1.perception.cs.cmu.edu/OpenPose/models/pose/mpi/pose_iter_160000.caffemodel                                                      
+RUN wget -c https://raw.githubusercontent.com/CMU-Perceptual-Computing-Lab/openpose/v1.4.0/models/pose/mpi/pose_deploy_linevec.prototxt               
+RUN wget -c https://raw.githubusercontent.com/CMU-Perceptual-Computing-Lab/openpose/v1.4.0/models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt
+
+WORKDIR /
 RUN rm -rf /tmp/*

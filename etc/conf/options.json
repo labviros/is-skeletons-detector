@@ -1,15 +1,21 @@
 {
-  "broker_uri": "amqp://192.168.1.105:30000",
-  "zipkin_host": "192.168.1.105",
-  "zipkin_port": 30200,
-  "zipkin_batch_size": 100,
-  "model": "MOBILENET_THIN",
-  "resize": {
-    "width": 432,
+  "broker_uri": "amqp://localhost:5672",
+  "zipkin_host": "localhost",
+  "zipkin_port": 9411,
+  "models_folder": "/models/",
+  "model": "MPI_4_layers",
+  "network_resolution": {
+    "width": -1,
     "height": 368
   },
-  "resize_out_ratio": 4.0,
-  "render_topic": 0,
-  "gpu_mem_allow_growth": true,
-  "per_process_gpu_memory_fraction": 0.0
+  "output_resolution": {
+    "width": -1,
+    "height": -1
+  },
+  "scale_gap": {
+    "value": 0.3
+  },
+  "scale_number": {
+    "value": 1
+  }
 }
