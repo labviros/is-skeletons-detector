@@ -1,4 +1,4 @@
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)Skeletons Detection Service
+Skeletons Detection Service
 ===
 
 Streams
