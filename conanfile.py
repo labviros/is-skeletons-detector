@@ -18,6 +18,7 @@ class SkeletonsDetectorServiceConan(ConanFile):
     requires = (
         "is-msgs/1.1.8@is/stable",
         "is-wire/1.1.4@is/stable",
+        "zipkin-cpp-opentracing/0.3.1@is/stable",
         "opencv/3.4.2@is/stable",
         "openpose/1.4.0@is/stable",
     )
