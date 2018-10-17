@@ -6,19 +6,20 @@ cmake_minimum_required(VERSION 3.10.0)
 
 find_package(is-msgs REQUIRED)
 find_package(is-wire REQUIRED)
-find_package(zipkin-cpp-opentracing REQUIRED)
 find_package(opencv REQUIRED)
-add_executable(service.bin service.cpp)
 
-target_link_libraries(
-  service.bin
- PRIVATE
+list(APPEND libraries 
   skeletons::utils
   skeletons::detector
   is-wire::is-wire
   is-msgs::is-msgs
-  zipkin-cpp-opentracing::zipkin-cpp-opentracing
   opencv::opencv
 )
 
-set_property(TARGET service.bin PROPERTY CXX_STANDARD 14)
+add_executable(stream.bin stream.cpp)
+target_link_libraries(stream.bin PRIVATE ${libraries})
+set_property(TARGET stream.bin PROPERTY CXX_STANDARD 14)
+
+add_executable(rpc.bin rpc.cpp)
+target_link_libraries(rpc.bin PRIVATE ${libraries})
+set_property(TARGET rpc.bin PROPERTY CXX_STANDARD 14)

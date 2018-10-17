@@ -36,6 +36,7 @@ add_library(skeletons::detector ALIAS detector)
 ######
 
 find_package(opencv REQUIRED)
+find_package(zipkin-cpp-opentracing REQUIRED)
 
 add_library(utils utils.cpp utils.hpp)
 
@@ -45,6 +46,7 @@ target_link_libraries(
   options::options
   is-msgs::is-msgs
   opencv::opencv
+  zipkin-cpp-opentracing::zipkin-cpp-opentracing
  PRIVATE
   is-wire::is-wire
 )

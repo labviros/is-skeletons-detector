@@ -21,6 +21,14 @@ int64_t get_topic_id(std::string const& topic) {
     throw std::runtime_error(fmt::format("Wrong format topic: \'{}\'", topic));
 }
 
+std::shared_ptr<opentracing::Tracer> make_tracer(is::SkeletonsDetectorOptions const& options, std::string const& service_name) {
+  ZipkinOtTracerOptions zp_options;
+  zp_options.service_name = service_name;
+  zp_options.collector_host = options.zipkin_host();
+  zp_options.collector_port = options.zipkin_port();
+  return makeZipkinOtTracer(zp_options);
+}
+
 void render_skeletons(cv::Mat& cv_image, is::vision::ObjectAnnotations const& skeletons, is::vision::Image* pb_image) {
   std::vector<int> base_values{0, 255, 85, 170};
   std::vector<cv::Scalar> colors;

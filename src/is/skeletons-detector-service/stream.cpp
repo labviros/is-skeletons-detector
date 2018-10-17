@@ -3,11 +3,8 @@
 #include "skeletons/detector.hpp"
 #include <is/wire/core.hpp>
 #include <is/msgs/utils.hpp>
-#include "zipkin/opentracing.h"
 
 using namespace std::chrono;
-using namespace zipkin;
-using namespace opentracing;
 
 int main(int argc, char** argv) {
   auto options = load_options(argc, argv);
@@ -17,12 +14,7 @@ int main(int argc, char** argv) {
   is::info("Connected to broker {}", options.broker_uri());
   auto subscription = is::Subscription(channel.internal_channel(), service_name + ".Detection");
   subscription.subscribe("CameraGateway.*.Frame");
-
-  ZipkinOtTracerOptions zp_options;
-  zp_options.service_name = "SkeletonsDetector";
-  zp_options.collector_host = options.zipkin_host();
-  zp_options.collector_port = options.zipkin_port();
-  auto tracer = makeZipkinOtTracer(zp_options);
+  auto tracer = make_tracer(options, "SkeletonsDetector");
 
   SkeletonsDetector detector(options);
   int dropped;
