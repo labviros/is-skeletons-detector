@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cstdlib>
 #include "skeletons/utils.hpp"
 #include "skeletons/detector.hpp"
 #include <is/wire/core.hpp>
@@ -13,21 +14,28 @@ int main(int argc, char** argv) {
   const std::string service_name{"SkeletonsDetector"};
 
   auto channel = is::Channel(options.broker_uri());
-  is::info("Connected to broker {}", options.broker_uri());
-  auto provider = is::ServiceProvider(channel);
-  provider.add_interceptor(is::LogInterceptor());
   auto tracer = make_tracer(options, "SkeletonsDetector");
   channel.set_tracer(tracer);
 
+  is::info("Connected to broker {}", options.broker_uri());
+  auto provider = is::ServiceProvider(channel);
+  provider.add_interceptor(is::LogInterceptor());
+
   SkeletonsDetector detector(options);
+  auto gpu_device_id = std::getenv("GPU_DEVICE_ID");
 
   provider.delegate<Image, ObjectAnnotations>(
-      service_name + ".Detect", [&](is::Context*, Image const& pb_image, ObjectAnnotations* skeletons) {
+      service_name + ".Detect", [&](is::Context* context, Image const& pb_image, ObjectAnnotations* skeletons) {
         try {
           *skeletons = detector.detect(pb_image);
         } catch (std::runtime_error& e) {
           return is::make_status(is::wire::StatusCode::INTERNAL_ERROR, e.what());
         } catch (...) { return is::make_status(is::wire::StatusCode::INTERNAL_ERROR); }
+
+        auto span = context->span();
+        span->SetTag("gpu_device_id", gpu_device_id);
+        span->SetTag("detections", skeletons->objects_size());
+
         return is::make_status(is::wire::StatusCode::OK);
       });
 

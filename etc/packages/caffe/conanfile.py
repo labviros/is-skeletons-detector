@@ -26,6 +26,7 @@ class CaffeConan(ConanFile):
     def requirements(self):
         self.requires("opencv/3.4.2@is/stable")
         self.requires("protobuf/3.6.1@bincrafters/stable")
+        self.requires("protoc_installer/3.6.1@bincrafters/stable")
         self.requires("boost/1.66.0@conan/stable")
 
     def system_requirements(self):
@@ -72,6 +73,7 @@ conan_basic_setup()''')
         cmake.definitions['BUILD_python'] = self.options.build_python
         cmake.definitions['BUILD_python_layer'] = self.options.build_python_layer
         cmake.definitions['BUILD_matlab'] = self.options.build_matlab
+        cmake.definitions['CUDA_ARCH_NAME'] = "All"
         cmake.definitions['CUDA_NVCC_FLAGS'] = "-O3"
 
         cmake.configure(source_folder="caffe")

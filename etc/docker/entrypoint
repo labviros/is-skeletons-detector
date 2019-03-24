@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export GPU_DEVICE_ID=`cat /proc/bus/pci/devices | grep nvidia | awk '{ print $2 }' | head -1`
+
+/bin/bash -c "$* >&1"

@@ -57,15 +57,17 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()''')
 
     def build(self):
+        caffe_include_dirs = os.path.join(self.deps_cpp_info["caffe"].rootpath, 'include')
+        caffe_libs = os.path.join(self.deps_cpp_info["caffe"].rootpath, 'lib/libcaffe.so')
+
         cmake = CMake(self, set_cmake_flags=True)
         cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
         cmake.definitions['BUILD_DOCS'] = self.options.build_docs
         cmake.definitions['BUILD_EXAMPLES'] = self.options.build_examples
         cmake.definitions['BUILD_CAFFE'] = self.options.build_caffe
-        cmake.definitions['Caffe_INCLUDE_DIRS'] = os.path.join(
-            self.deps_cpp_info["caffe"].rootpath, 'include')
-        cmake.definitions['Caffe_LIBS'] = os.path.join(self.deps_cpp_info["caffe"].rootpath,
-                                                       'lib/libcaffe.so')
+        cmake.definitions['Caffe_INCLUDE_DIRS'] = caffe_include_dirs
+        cmake.definitions['Caffe_LIBS'] = caffe_libs
+        cmake.definitions['CUDA_ARCH'] = "All"
         cmake.definitions["DOWNLOAD_BODY_MPI_MODEL"] = self.options.download_body_mpi_model
         cmake.definitions["DOWNLOAD_BODY_COCO_MODEL"] = self.options.download_body_coco_model
         cmake.definitions["DOWNLOAD_BODY_25_MODEL"] = self.options.download_body_25_model

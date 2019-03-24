@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cstdlib>
 #include "skeletons/utils.hpp"
 #include "skeletons/detector.hpp"
 #include <is/wire/core.hpp>
@@ -17,7 +18,9 @@ int main(int argc, char** argv) {
   auto tracer = make_tracer(options, "SkeletonsDetector");
 
   SkeletonsDetector detector(options);
+  auto gpu_device_id = std::getenv("GPU_DEVICE_ID");
   int dropped;
+
   while (true) {
     const auto start_span = [&](auto& maybe_ctx, auto span_name) {
       return maybe_ctx ? tracer->StartSpan(span_name, {ChildOf(maybe_ctx->get())}) : tracer->StartSpan(span_name);
@@ -37,6 +40,9 @@ int main(int argc, char** argv) {
     auto detection_span = start_span(maybe_ctx, "detection");
     auto camera_id = get_topic_id(msg.topic());
     auto skeletons = detector.detect(pb_image.get(), camera_id);
+
+    detection_span->SetTag("gpu_device_id", gpu_device_id);
+    detection_span->SetTag("detections", skeletons.objects_size());
     detection_span->Finish();
 
     auto t1 = steady_clock::now();
@@ -54,7 +60,6 @@ int main(int argc, char** argv) {
     channel.publish(fmt::format("SkeletonsDetector.{}.Rendered", camera_id), rendered_msg);
     render_span->Finish();
 
-    service_span->SetTag("detections", skeletons.objects_size());
     service_span->Finish();
     auto t2 = steady_clock::now();
 

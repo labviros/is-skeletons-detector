@@ -32,14 +32,23 @@ the CNN (Convolutional Neural Network) input size changing `width` and `height` 
 Developing
 ---
 
-Once it's necessary to install many dependencies including NVIDIA Cuda libraries, a Docker image is created before the deployment image. This image can be user to perform tests during development. For that, simply run the script [etc/docker/pack.sh](https://github.com/labviros/is-skeletons-detector/blob/openpose/etc/docker/pack.sh):
+Since it's necessary to install many dependencies including NVIDIA Cuda libraries, a Docker image can be created to ease the development process. To do so, run the command below on the root directory of this project:
 
 ```shell
-cd etc/docker/
-bash pack.sh
+docker build . --network=host -f etc/docker/Dockerfile.devel -t is-skeletons-detector/devel
 ```
-If it is the first time you run this script, a message will be prompt indicating that the image `is-skeletons-detector/dev` wasn't found, then the build process will occur. Now just run the command below inside the project directory.
+
+Besides, you'll need to download the available network models. Do that running the following commands:
 
 ```shell
-docker run -ti --rm --runtime=nvidia --network=host -v `pwd`:/devel is-skeletons-detector/dev bash
+cd etc/dataset
+./download.sh
 ```
+
+Now, you can compile and run the binaries from inside the generated docker image by running on the root directory:
+
+```shell
+docker run -ti --runtime=nvidia --network=host -v `pwd`:/project -v `pwd`/etc/dataset/models:/models is-skeletons-detector/devel /bin/bash
+```
+
+Images for production are built automatically by [Docker Cloud](https://cloud.docker.com/) after a commit being tagged on GitHub. Otherwise, you can do this on your machine by building the another Dockerfile on `etc/docker/` folder like you did for the developer image.
