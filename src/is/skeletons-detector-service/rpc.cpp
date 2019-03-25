@@ -22,7 +22,8 @@ int main(int argc, char** argv) {
   provider.add_interceptor(is::LogInterceptor());
 
   SkeletonsDetector detector(options);
-  auto gpu_device_id = std::getenv("GPU_DEVICE_ID");
+  auto gpu_device_id_var = std::getenv("GPU_DEVICE_ID");
+  auto gpu_device_id = gpu_device_id_var != nullptr ? gpu_device_id_var : "";
 
   provider.delegate<Image, ObjectAnnotations>(
       service_name + ".Detect", [&](is::Context* context, Image const& pb_image, ObjectAnnotations* skeletons) {

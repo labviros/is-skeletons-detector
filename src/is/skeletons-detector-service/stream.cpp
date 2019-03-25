@@ -18,7 +18,8 @@ int main(int argc, char** argv) {
   auto tracer = make_tracer(options, "SkeletonsDetector");
 
   SkeletonsDetector detector(options);
-  auto gpu_device_id = std::getenv("GPU_DEVICE_ID");
+  auto gpu_device_id_var = std::getenv("GPU_DEVICE_ID");
+  auto gpu_device_id = gpu_device_id_var != nullptr ? gpu_device_id_var : "";
   int dropped;
 
   while (true) {
