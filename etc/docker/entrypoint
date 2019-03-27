@@ -1,5 +1,5 @@
 #!/bin/bash
 
-export GPU_DEVICE_ID=`cat /proc/bus/pci/devices | grep nvidia | awk '{ print $2 }' | head -1`
+export GPU_DEVICE_ID=`nvidia-smi --query-gpu=pci.device_id  --format=csv | tail -1 | sed -rn -e 's/^0x([0-9A-F]{4})([0-9A-F]{4})/\L\2\L\1/p'`
 
 /bin/bash -c "$* >&1"
